@@ -7,6 +7,7 @@ use windows::{
 };
 use windows_registry::CURRENT_USER;
 
+pub mod futures;
 pub mod shell;
 
 pub const WINLOGON: &str = r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlogon";
