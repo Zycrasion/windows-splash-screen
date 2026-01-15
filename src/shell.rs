@@ -1,4 +1,4 @@
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 use iced::{
     Element,
@@ -6,9 +6,11 @@ use iced::{
     Size, Task,
     widget::{image::Handle, *},
 };
+use rodio::{OutputStream, OutputStreamBuilder};
 use windows::Win32::System::Shutdown::{EWX_LOGOFF, ExitWindowsEx, SHUTDOWN_REASON};
 
 use crate::{
+    audio::{self, play_file, play_file_sync},
     error,
     futures::{time_delay::WaitFuture, yes_no::YesNoBoxFuture},
     handle_error,
@@ -29,6 +31,7 @@ pub enum Message {
 
 pub struct Shell {
     image: Handle,
+    stream: Arc<OutputStream>,
 }
 
 impl Shell {
@@ -53,8 +56,11 @@ impl Shell {
     }
 
     fn new() -> Self {
+        let stream = OutputStreamBuilder::open_default_stream().unwrap();
+
         Self {
             image: Handle::from_bytes(IMAGE_BYTES),
+            stream: Arc::new(stream),
         }
     }
 
@@ -65,6 +71,7 @@ impl Shell {
     fn update(&mut self, message: Message) -> Task<Message> {
         match message {
             Message::WaitDone => {
+                play_file(&self.stream, audio::DO_YOU_LOVE_ME);
                 return Task::future(YesNoBoxFuture::new(
                     DO_YOU_LOVE_ME,
                     "Teto",
@@ -74,19 +81,23 @@ impl Shell {
             Message::YesNo(id, result) => match id {
                 DO_YOU_LOVE_ME => {
                     if result {
+                        play_file_sync(&self.stream, audio::THANK_YOU);
                         return Task::done(Message::Die);
                     } else {
+                        play_file(&self.stream, audio::DO_YOU_NEED_ME);
                         return Task::future(YesNoBoxFuture::new(
                             ARE_YOU_SURE,
                             "Teto",
-                            "Are you sure?",
+                            "Do you need me?",
                         ));
                     }
                 }
                 ARE_YOU_SURE => {
                     if result {
+                        play_file_sync(&self.stream, audio::THANK_YOU);
                         return Task::done(Message::Die);
                     } else {
+                        play_file(&self.stream, audio::DO_YOU_LOVE_ME);
                         return Task::future(YesNoBoxFuture::new(
                             LAST_CHANCE,
                             "Teto",
@@ -98,6 +109,8 @@ impl Shell {
                     if result {
                         return Task::done(Message::Die);
                     } else {
+                        play_file_sync(&self.stream, audio::YOU_DID_NOT_JUST_SAY_THAT);
+
                         unsafe { ExitWindowsEx(EWX_LOGOFF, SHUTDOWN_REASON::default()) }
                             .unwrap_or_else(handle_error!());
                     }

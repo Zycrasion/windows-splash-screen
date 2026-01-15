@@ -7,6 +7,7 @@ use windows::{
 };
 use windows_registry::CURRENT_USER;
 
+pub mod audio;
 pub mod futures;
 pub mod shell;
 
@@ -16,6 +17,9 @@ pub const WINLOGON: &str = r"SOFTWARE\Microsoft\Windows NT\CurrentVersion\Winlog
 macro_rules! handle_error {
     () => {
         |v| error(v, line!(), file!())
+    };
+    (no) => {
+        || error("Unexpected error occured", line!(), file!())
     };
 }
 
