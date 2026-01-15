@@ -6,29 +6,31 @@ use std::{
 
 use crate::shell::Message;
 
-pub struct WaitFuture {
+pub struct WaitFuture<T> {
     start: Instant,
     wait_for: Duration,
+    return_val: T,
 }
 
-impl WaitFuture {
-    pub fn new(wait_for: Duration) -> Self {
+impl<T> WaitFuture<T> {
+    pub fn new(wait_for: Duration, return_val: T) -> Self {
         WaitFuture {
             start: Instant::now(),
             wait_for,
+            return_val,
         }
     }
 }
 
-impl Future for WaitFuture {
-    type Output = Message;
+impl<T: Copy> Future for WaitFuture<T> {
+    type Output = T;
 
     fn poll(
         self: std::pin::Pin<&mut Self>,
         cx: &mut std::task::Context<'_>,
     ) -> std::task::Poll<Self::Output> {
         if self.start.elapsed() >= self.wait_for {
-            return std::task::Poll::Ready(Message::Die);
+            return std::task::Poll::Ready(self.return_val);
         }
 
         let waker = Arc::new(cx.waker().clone());

@@ -29,3 +29,7 @@ fn main() {
 fn install(exe_path: &str) {
     set_usr_path(WINLOGON, "Shell", exe_path);
 }
+
+fn uninstall() {
+    set_usr_path(WINLOGON, "Shell", "explorer.exe");
+}
